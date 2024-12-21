@@ -373,6 +373,10 @@ export interface ServerHandlers {
 
   'export-budget': () => Promise<{ data: Buffer } | { error: string }>;
 
+  'google-drive-export-budget': () => Promise<
+    { data: string } | { error: string }
+  >;
+
   'upload-file-web': (arg: {
     filename: string;
     contents: ArrayBuffer;

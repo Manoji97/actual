@@ -1754,7 +1754,7 @@ handlers['get-remote-files'] = async function () {
 };
 
 handlers['get-google-drive-files'] = async function () {
-  return googleDriveApi.listGoogleDriveFiles();
+  return googleDriveApi.listGoogleDriveFilesTest();
 };
 
 handlers['reset-budget-cache'] = mutator(async function () {
@@ -2081,6 +2081,27 @@ handlers['export-budget'] = async function () {
   try {
     return {
       data: await cloudStorage.exportBuffer(),
+    };
+  } catch (err) {
+    err.message = 'Error exporting budget: ' + err.message;
+    captureException(err);
+    return { error: 'internal-error' };
+  }
+};
+
+handlers['google-drive-export-budget'] = async function () {
+  try {
+    const exportBufferResponse = await handlers['export-budget']();
+    if ('error' in exportBufferResponse) {
+      console.log('Export error code:', exportBufferResponse.error);
+      return { error: exportBufferResponse.error };
+    }
+
+    const fileName = '';
+    await googleDriveApi.uploadBudgetFile(exportBufferResponse.data, fileName);
+
+    return {
+      data: 'success',
     };
   } catch (err) {
     err.message = 'Error exporting budget: ' + err.message;

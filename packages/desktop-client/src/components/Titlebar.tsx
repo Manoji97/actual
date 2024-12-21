@@ -36,6 +36,7 @@ import { Link } from './common/Link';
 import { SpaceBetween } from './common/SpaceBetween';
 import { Text } from './common/Text';
 import { View } from './common/View';
+import { GoogleDriveUploadButton } from './google-drive/GoogleDriveUploadButton';
 import { HelpMenu } from './HelpMenu';
 import { LoggedInUser } from './LoggedInUser';
 import { useResponsive } from './responsive/ResponsiveProvider';
@@ -341,6 +342,7 @@ export function Titlebar({ style }: TitlebarProps) {
       </Routes>
       <View style={{ flex: 1 }} />
       <SpaceBetween gap={10}>
+        <GoogleDriveUploadButton />
         <UncategorizedButton />
         {isDevelopmentEnvironment() && !Platform.isPlaywright && (
           <ThemeSelector />
