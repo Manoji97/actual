@@ -45,7 +45,7 @@ import { UpdateNotification } from './UpdateNotification';
 
 function AppInner() {
   const [budgetId] = useMetadataPref('id');
-  const [cloudFileId] = useMetadataPref('cloudFileId');
+  // const [cloudFileId] = useMetadataPref('cloudFileId');
   const { t } = useTranslation();
   const { showBoundary: showErrorBoundary } = useErrorBoundary();
   const dispatch = useDispatch();
@@ -86,28 +86,28 @@ function AppInner() {
         loadingText: t('Opening last budget...'),
       }),
     );
-    const budgetId = await send('get-last-opened-backup');
-    if (budgetId) {
-      await dispatch(loadBudget(budgetId));
+    // const budgetId = await send('get-last-opened-backup');
+    // if (budgetId) {
+    //   await dispatch(loadBudget(budgetId));
 
-      // Check to see if this file has been remotely deleted (but
-      // don't block on this in case they are offline or something)
-      dispatch(
-        setAppState({
-          loadingText: t('Retrieving remote files...'),
-        }),
-      );
+    //   // Check to see if this file has been remotely deleted (but
+    //   // don't block on this in case they are offline or something)
+    //   dispatch(
+    //     setAppState({
+    //       loadingText: t('Retrieving remote files...'),
+    //     }),
+    //   );
 
-      const files = await send('get-remote-files');
-      if (files) {
-        const remoteFile = files.find(f => f.fileId === cloudFileId);
-        if (remoteFile && remoteFile.deleted) {
-          dispatch(closeBudget());
-        }
-      }
+    //   const files = await send('get-remote-files');
+    //   if (files) {
+    //     const remoteFile = files.find(f => f.fileId === cloudFileId);
+    //     if (remoteFile && remoteFile.deleted) {
+    //       dispatch(closeBudget());
+    //     }
+    //   }
 
-      await maybeUpdate();
-    }
+    //   await maybeUpdate();
+    // }
   }
 
   useEffect(() => {

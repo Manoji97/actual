@@ -7,6 +7,7 @@ import {
   closeAndLoadBudget,
   createBudget,
   downloadBudget,
+  downloadGoogleDriveBudget,
   getUserData,
   loadAllFiles,
   loadBudget,
@@ -153,6 +154,14 @@ function FileState({ file }: { file: File }) {
     case 'broken':
       Icon = SvgFileDouble;
       status = t('Local');
+      break;
+    case 'google-drive':
+      Icon = SvgCloudDownload;
+      status = t('Google Drive');
+      break;
+    case 'google-drive-sync':
+      Icon = SvgCloudCheck;
+      status = t('Google Drive');
       break;
     default:
       Icon = SvgCloudCheck;
@@ -452,16 +461,22 @@ export function BudgetList({ showHeader = true, quickSwitchMode = false }) {
   }
 
   const onSelect = async (file: File): Promise<void> => {
+    const isGoogleDriveFile =
+      file.state === 'google-drive' || file.state === 'google-drive-sync';
     const isRemoteFile = file.state === 'remote';
 
     if (!id) {
-      if (isRemoteFile) {
+      if (isGoogleDriveFile) {
+        await dispatch(downloadGoogleDriveBudget(file.cloudFileId));
+      } else if (isRemoteFile) {
         await dispatch(downloadBudget(file.cloudFileId));
       } else {
         await dispatch(loadBudget(file.id));
       }
-    } else if (!isRemoteFile && file.id !== id) {
+    } else if (!isGoogleDriveFile && !isRemoteFile && file.id !== id) {
       await dispatch(closeAndLoadBudget(file.id));
+    } else if (isGoogleDriveFile) {
+      await dispatch(closeAndDownloadBudget(file.cloudFileId));
     } else if (isRemoteFile) {
       await dispatch(closeAndDownloadBudget(file.cloudFileId));
     }

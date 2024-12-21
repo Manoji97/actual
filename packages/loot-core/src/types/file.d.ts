@@ -6,6 +6,8 @@ export type FileState =
   | 'synced'
   | 'detached'
   | 'broken'
+  | 'google-drive'
+  | 'google-drive-sync'
   | 'unknown';
 
 export type LocalFile = Omit<Budget, 'cloudFileId' | 'groupId'> & {
@@ -37,4 +39,28 @@ export type RemoteFile = {
   state: 'remote';
 };
 
-export type File = LocalFile | SyncableLocalFile | SyncedLocalFile | RemoteFile;
+export type GoogleDriveFile = {
+  cloudFileId: string;
+  groupId: string;
+  name: string;
+  encryptKeyId?: string;
+  hasKey: boolean;
+  state: 'google-drive';
+};
+
+export type GoogleDriveSyncedFile = {
+  cloudFileId: string;
+  groupId: string;
+  name: string;
+  encryptKeyId?: string;
+  hasKey: boolean;
+  state: 'google-drive-sync';
+};
+
+export type File =
+  | LocalFile
+  | SyncableLocalFile
+  | SyncedLocalFile
+  | RemoteFile
+  | GoogleDriveFile
+  | GoogleDriveSyncedFile;

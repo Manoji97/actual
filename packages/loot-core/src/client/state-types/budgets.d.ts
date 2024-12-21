@@ -1,4 +1,5 @@
 import type { RemoteFile } from '../../server/cloud-storage';
+import type { GoogleDriveFile } from '../../server/google-drive';
 import type { Budget } from '../../types/budget';
 import type { File } from '../../types/file';
 import type * as constants from '../constants';
@@ -6,6 +7,7 @@ import type * as constants from '../constants';
 export type BudgetsState = {
   budgets: Budget[];
   remoteFiles: RemoteFile[] | null;
+  googleDriveFiles: GoogleDriveFile[] | null;
   allFiles: File[] | null;
 };
 
@@ -23,6 +25,7 @@ export type SetAllFilesAction = {
   type: typeof constants.SET_ALL_FILES;
   budgets: Budget[];
   remoteFiles: RemoteFile[];
+  googleDriveFiles: GoogleDriveFile[];
 };
 
 export type SignOutAction = {

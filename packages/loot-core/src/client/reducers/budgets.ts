@@ -1,4 +1,5 @@
 import type { RemoteFile } from '../../server/cloud-storage';
+import type { GoogleDriveFile } from '../../server/google-drive';
 import type { Budget } from '../../types/budget';
 import { type File } from '../../types/file';
 import * as constants from '../constants';
@@ -11,8 +12,18 @@ function sortFiles(arr: File[]) {
     const name2 = y.name.toLowerCase();
     let i = name1 < name2 ? -1 : name1 > name2 ? 1 : 0;
     if (i === 0) {
-      const xId = x.state === 'remote' ? x.cloudFileId : x.id;
-      const yId = x.state === 'remote' ? x.cloudFileId : x.id;
+      const xId =
+        x.state === 'remote' ||
+        x.state === 'google-drive' ||
+        x.state === 'google-drive-sync'
+          ? x.cloudFileId
+          : x.id;
+      const yId =
+        x.state === 'remote' ||
+        x.state === 'google-drive' ||
+        x.state === 'google-drive-sync'
+          ? x.cloudFileId
+          : x.id;
       i = xId < yId ? -1 : xId > yId ? 1 : 0;
     }
     return i;
@@ -30,11 +41,35 @@ function sortFiles(arr: File[]) {
 function reconcileFiles(
   localFiles: Budget[],
   remoteFiles: RemoteFile[] | null,
+  googleDriveFiles: GoogleDriveFile[] | null,
 ): File[] {
   const reconciled = new Set();
 
   const files = localFiles.map((localFile): File & { deleted: boolean } => {
-    const { cloudFileId, groupId } = localFile;
+    const { cloudFileId, groupId, googleDriveFileId } = localFile;
+    if (
+      googleDriveFileId &&
+      googleDriveFiles !== null &&
+      googleDriveFiles.length > 0
+    ) {
+      const googleDriveFile = googleDriveFiles.find(
+        gdf => gdf.fileId === googleDriveFileId,
+      );
+
+      if (googleDriveFile) {
+        reconciled.add(googleDriveFile.fileId);
+        return {
+          ...localFile,
+          cloudFileId: googleDriveFile.fileId,
+          groupId,
+          name: googleDriveFile.name,
+          deleted: googleDriveFile.deleted,
+          encryptKeyId: googleDriveFile.encryptKeyId,
+          hasKey: googleDriveFile.hasKey,
+          state: 'google-drive-sync',
+        };
+      }
+    }
     if (cloudFileId && groupId) {
       // This is the case where for some reason getting the files from
       // the server failed. We don't want to scare the user, just show
@@ -97,6 +132,21 @@ function reconcileFiles(
   const sorted = sortFiles(
     files
       .concat(
+        (googleDriveFiles || [])
+          .filter(gdf => !reconciled.has(gdf.fileId))
+          .map(gdf => {
+            return {
+              cloudFileId: gdf.fileId,
+              groupId: gdf.groupId,
+              name: gdf.name,
+              deleted: gdf.deleted,
+              encryptKeyId: gdf.encryptKeyId,
+              hasKey: gdf.hasKey,
+              state: 'google-drive',
+            };
+          }),
+      )
+      .concat(
         (remoteFiles || [])
           .filter(f => !reconciled.has(f.fileId))
           .map(f => {
@@ -124,6 +174,7 @@ function reconcileFiles(
 const initialState: BudgetsState = {
   budgets: [],
   remoteFiles: null,
+  googleDriveFiles: null,
   allFiles: null,
 };
 
@@ -133,20 +184,33 @@ export function update(state = initialState, action: Action): BudgetsState {
       return {
         ...state,
         budgets: action.budgets,
-        allFiles: reconcileFiles(action.budgets, state.remoteFiles),
+        allFiles: reconcileFiles(
+          action.budgets,
+          state.remoteFiles,
+          state.googleDriveFiles,
+        ),
       };
     case constants.SET_REMOTE_FILES:
       return {
         ...state,
         remoteFiles: action.files,
-        allFiles: reconcileFiles(state.budgets, action.files),
+        allFiles: reconcileFiles(
+          state.budgets,
+          action.files,
+          state.googleDriveFiles,
+        ),
       };
     case constants.SET_ALL_FILES:
       return {
         ...state,
         budgets: action.budgets,
         remoteFiles: action.remoteFiles,
-        allFiles: reconcileFiles(action.budgets, action.remoteFiles),
+        googleDriveFiles: action.googleDriveFiles,
+        allFiles: reconcileFiles(
+          action.budgets,
+          action.remoteFiles,
+          action.googleDriveFiles,
+        ),
       };
     case constants.SIGN_OUT:
       // If the user logs out, make sure to reset all the files

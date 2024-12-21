@@ -37,11 +37,13 @@ export function loadAllFiles() {
   return async (dispatch: Dispatch, getState: GetState) => {
     const budgets = await send('get-budgets');
     const files = await send('get-remote-files');
+    const googleDriveFiles = await send('get-google-drive-files');
 
     dispatch({
       type: constants.SET_ALL_FILES,
       budgets,
       remoteFiles: files,
+      googleDriveFiles,
     });
 
     return getState().budgets.allFiles;
@@ -311,5 +313,39 @@ export function downloadBudget(cloudFileId: string, { replace = false } = {}) {
     }
 
     return id;
+  };
+}
+
+export function downloadGoogleDriveBudget(googleDriveFileId: string) {
+  return async (dispatch: Dispatch) => {
+    dispatch(
+      setAppState({
+        loadingText: t('Downloading...'),
+      }),
+    );
+
+    const { id, error } = await send('download-google-drive-budget', {
+      googleDriveFileId,
+    });
+
+    if (error) {
+      dispatch(setAppState({ loadingText: null }));
+      alert(getDownloadError(error));
+      return;
+    }
+
+    await Promise.all([
+      dispatch(loadGlobalPrefs()),
+      dispatch(loadAllFiles()),
+      dispatch(loadBudget(id)),
+    ]);
+    dispatch(setAppState({ loadingText: null }));
+  };
+}
+
+export function closeAndDowloadGoogleDriveBudget(googleDriveFileId: string) {
+  return async (dispatch: Dispatch) => {
+    await dispatch(closeBudget());
+    dispatch(downloadGoogleDriveBudget(googleDriveFileId));
   };
 }

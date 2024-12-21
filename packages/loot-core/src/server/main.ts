@@ -45,6 +45,7 @@ import * as mappings from './db/mappings';
 import * as encryption from './encryption';
 import { APIError, TransactionError, PostError } from './errors';
 import { app as filtersApp } from './filters/app';
+import * as googleDriveApi from './google-drive';
 import { handleBudgetImport } from './importers';
 import { app } from './main-app';
 import { mutator, runHandler } from './mutators';
@@ -1752,6 +1753,10 @@ handlers['get-remote-files'] = async function () {
   return cloudStorage.listRemoteFiles();
 };
 
+handlers['get-google-drive-files'] = async function () {
+  return googleDriveApi.listGoogleDriveFiles();
+};
+
 handlers['reset-budget-cache'] = mutator(async function () {
   // Recomputing everything will update the cache
   await sheet.loadUserBudgets(db);
@@ -1815,6 +1820,13 @@ handlers['download-budget'] = async function ({ fileId }) {
     return result;
   }
   return { id };
+};
+
+handlers['download-google-drive-budget'] = async function ({
+  googleDriveFileId,
+}) {
+  console.log('Downloading Google Drive budget');
+  return { error: { reason: 'internal' }, id: null };
 };
 
 // open and sync, but don’t close

@@ -2,6 +2,7 @@ import { ParseFileResult } from '../server/accounts/parse-file';
 import { batchUpdateTransactions } from '../server/accounts/transactions';
 import { Backup } from '../server/backups';
 import { RemoteFile } from '../server/cloud-storage';
+import { GoogleDriveFile } from '../server/google-drive';
 import { Node as SpreadsheetNode } from '../server/spreadsheet/spreadsheet';
 import { Message } from '../server/sync';
 import { QueryState } from '../shared/query';
@@ -314,11 +315,17 @@ export interface ServerHandlers {
 
   'get-remote-files': () => Promise<RemoteFile[]>;
 
+  'get-google-drive-files': () => Promise<GoogleDriveFile[]>;
+
   'reset-budget-cache': () => Promise<unknown>;
 
   'upload-budget': (arg: { id }) => Promise<{ error?: string }>;
 
   'download-budget': (arg: { fileId; replace? }) => Promise<{ error; id }>;
+
+  'download-google-drive-budget': (arg: {
+    googleDriveFileId;
+  }) => Promise<{ error; id }>;
 
   'sync-budget': () => Promise<{
     error?: { message: string; reason: string; meta: unknown };
