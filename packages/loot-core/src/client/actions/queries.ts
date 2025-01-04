@@ -385,3 +385,9 @@ export function redo() {
     }
   };
 }
+
+export function initializeGoogle(accessToken: string) {
+  return async () => {
+    await send('initialize-goole-drive', { accessToken });
+  };
+}

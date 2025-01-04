@@ -315,7 +315,13 @@ export interface ServerHandlers {
 
   'get-remote-files': () => Promise<RemoteFile[]>;
 
-  'get-google-drive-files': () => Promise<GoogleDriveFile[]>;
+  'initialize-goole-drive': (arg: {
+    accessToken: string;
+  }) => Promise<{ status: boolean; error?: string }>;
+
+  'get-google-drive-files': (arg: {
+    accessToken: string;
+  }) => Promise<GoogleDriveFile[]>;
 
   'reset-budget-cache': () => Promise<unknown>;
 
@@ -324,8 +330,9 @@ export interface ServerHandlers {
   'download-budget': (arg: { fileId; replace? }) => Promise<{ error; id }>;
 
   'download-google-drive-budget': (arg: {
+    accessToken: string;
     googleDriveFileId;
-  }) => Promise<{ error; id }>;
+  }) => Promise<{ error?; id }>;
 
   'sync-budget': () => Promise<{
     error?: { message: string; reason: string; meta: unknown };
@@ -373,9 +380,9 @@ export interface ServerHandlers {
 
   'export-budget': () => Promise<{ data: Buffer } | { error: string }>;
 
-  'google-drive-export-budget': () => Promise<
-    { data: string } | { error: string }
-  >;
+  'google-drive-export-budget': (arg: {
+    accessToken: string;
+  }) => Promise<{ data: string } | { error: string }>;
 
   'upload-file-web': (arg: {
     filename: string;

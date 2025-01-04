@@ -35,9 +35,12 @@ export function loadRemoteFiles() {
 
 export function loadAllFiles() {
   return async (dispatch: Dispatch, getState: GetState) => {
+    const googleAccessToken = getState().googleAuth.accessToken;
     const budgets = await send('get-budgets');
     const files = await send('get-remote-files');
-    const googleDriveFiles = await send('get-google-drive-files');
+    const googleDriveFiles = await send('get-google-drive-files', {
+      accessToken: googleAccessToken,
+    });
 
     dispatch({
       type: constants.SET_ALL_FILES,
@@ -317,14 +320,17 @@ export function downloadBudget(cloudFileId: string, { replace = false } = {}) {
 }
 
 export function downloadGoogleDriveBudget(googleDriveFileId: string) {
-  return async (dispatch: Dispatch) => {
+  return async (dispatch: Dispatch, getState: GetState) => {
     dispatch(
       setAppState({
         loadingText: t('Downloading...'),
       }),
     );
 
+    const googleAccessToken = getState().googleAuth.accessToken;
+
     const { id, error } = await send('download-google-drive-budget', {
+      accessToken: googleAccessToken,
       googleDriveFileId,
     });
 

@@ -46,21 +46,15 @@ function reconcileFiles(
   const reconciled = new Set();
 
   const files = localFiles.map((localFile): File & { deleted: boolean } => {
-    const { cloudFileId, groupId, googleDriveFileId } = localFile;
-    if (
-      googleDriveFileId &&
-      googleDriveFiles !== null &&
-      googleDriveFiles.length > 0
-    ) {
-      const googleDriveFile = googleDriveFiles.find(
-        gdf => gdf.fileId === googleDriveFileId,
-      );
+    const { cloudFileId, groupId, id } = localFile;
+    if (id && googleDriveFiles !== null && googleDriveFiles.length > 0) {
+      const googleDriveFile = googleDriveFiles.find(gdf => gdf.fileId === id);
 
       if (googleDriveFile) {
         reconciled.add(googleDriveFile.fileId);
         return {
           ...localFile,
-          cloudFileId: googleDriveFile.fileId,
+          cloudFileId: googleDriveFile.googleDriveFileId,
           groupId,
           name: googleDriveFile.name,
           deleted: googleDriveFile.deleted,

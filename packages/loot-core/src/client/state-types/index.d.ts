@@ -3,6 +3,7 @@ import type * as constants from '../constants';
 import type { AccountActions, AccountState } from './account';
 import type { AppActions, AppState } from './app';
 import type { BudgetsActions, BudgetsState } from './budgets';
+import type { SetGoogleAuthAction, GoogleAuthState } from './google';
 import type { ModalsActions, ModalsState } from './modals';
 import type { NotificationsActions, NotificationsState } from './notifications';
 import type { PrefsActions, PrefsState } from './prefs';
@@ -22,7 +23,8 @@ export type Action =
   | PrefsActions
   | QueriesActions
   | UserActions
-  | CloseBudgetAction;
+  | CloseBudgetAction
+  | SetGoogleAuthAction;
 
 export type State = {
   account: AccountState;
@@ -33,6 +35,7 @@ export type State = {
   prefs: PrefsState;
   queries: QueriesState;
   user: UserState;
+  googleAuth: GoogleAuthState;
 };
 
 declare module 'react-redux' {

@@ -9,23 +9,20 @@ import {
 } from 'react-error-boundary';
 import { HotkeysProvider } from 'react-hotkeys-hook';
 import { useTranslation } from 'react-i18next';
-import { useDispatch } from 'react-redux';
+import { useDispatch, useSelector } from 'react-redux';
 import { BrowserRouter } from 'react-router-dom';
 
 import {
-  closeBudget,
-  loadBudget,
   loadGlobalPrefs,
   setAppState,
   sync,
+  initializeGoogle,
 } from 'loot-core/client/actions';
 import { SpreadsheetProvider } from 'loot-core/client/SpreadsheetProvider';
 import * as Platform from 'loot-core/src/client/platform';
-import {
-  init as initConnection,
-  send,
-} from 'loot-core/src/platform/client/fetch';
+import { init as initConnection } from 'loot-core/src/platform/client/fetch';
 
+import { useGoogleApi } from '../hooks/useGoogleApi';
 import { useMetadataPref } from '../hooks/useMetadataPref';
 import { installPolyfills } from '../polyfills';
 import { styles, hasHiddenScrollbars, ThemeStyle, useTheme } from '../style';
@@ -49,6 +46,10 @@ function AppInner() {
   const { t } = useTranslation();
   const { showBoundary: showErrorBoundary } = useErrorBoundary();
   const dispatch = useDispatch();
+  const google = useSelector(state => state.googleAuth);
+  console.log('google', google);
+
+  const { gapiLoaded, signIn, signOut } = useGoogleApi();
 
   const maybeUpdate = async <T,>(cb?: () => T): Promise<T> => {
     if (global.Actual.isUpdateReadyForDownload()) {
@@ -123,6 +124,15 @@ function AppInner() {
     global.Actual.updateAppMenu(budgetId);
   }, [budgetId]);
 
+  if (!(gapiLoaded && google.loggedIn)) {
+    return (
+      <div>
+        <button onClick={signIn}>Sign In with Google</button>
+        <button onClick={signOut}>Sign Out</button>
+      </div>
+    );
+  }
+  dispatch(initializeGoogle(google.accessToken));
   return budgetId ? <FinancesApp /> : <ManagementApp />;
 }
 

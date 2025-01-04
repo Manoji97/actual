@@ -1753,8 +1753,14 @@ handlers['get-remote-files'] = async function () {
   return cloudStorage.listRemoteFiles();
 };
 
-handlers['get-google-drive-files'] = async function () {
-  return googleDriveApi.listGoogleDriveFilesTest();
+handlers['initialize-goole-drive'] = async function ({ accessToken }) {
+  await googleDriveApi.initializeGoogleDrive(accessToken);
+  return { status: true };
+};
+
+handlers['get-google-drive-files'] = async function ({ accessToken }) {
+  return googleDriveApi.getBudgetsList(accessToken);
+  // return googleDriveApi.listGoogleDriveFilesTest();
 };
 
 handlers['reset-budget-cache'] = mutator(async function () {
@@ -1823,10 +1829,32 @@ handlers['download-budget'] = async function ({ fileId }) {
 };
 
 handlers['download-google-drive-budget'] = async function ({
+  accessToken,
   googleDriveFileId,
 }) {
+  if (!accessToken) {
+    return { error: { reason: 'unauthorized' }, id: null };
+  }
+
+  const fileBuffer = await googleDriveApi.downloadBudgetFile(
+    accessToken,
+    googleDriveFileId,
+  );
+
+  console.log('Downloaded Google Drive budget', fileBuffer);
+
+  // if (fileBuffer) {
+  //   const id = await idFromBudgetName('Google Drive Budget');
+  //   const budgetDir = fs.getBudgetDir(id);
+  //   await fs.mkdir(budgetDir);
+
+  //   await fs.writeFile(fs.join(budgetDir, 'db.sqlite'), fileBuffer);
+
+  //   await prefs.loadPrefs(id);
+  //   return
+
   console.log('Downloading Google Drive budget');
-  return { error: { reason: 'internal' }, id: null };
+  return { id: 'null' };
 };
 
 // open and sync, but don’t close
@@ -2089,16 +2117,23 @@ handlers['export-budget'] = async function () {
   }
 };
 
-handlers['google-drive-export-budget'] = async function () {
+handlers['google-drive-export-budget'] = async function ({ accessToken }) {
   try {
+    const perfs = await handlers['load-prefs']();
+
     const exportBufferResponse = await handlers['export-budget']();
     if ('error' in exportBufferResponse) {
       console.log('Export error code:', exportBufferResponse.error);
       return { error: exportBufferResponse.error };
     }
 
-    const fileName = '';
-    await googleDriveApi.uploadBudgetFile(exportBufferResponse.data, fileName);
+    const fileName = `${perfs.id}.zip`;
+    await googleDriveApi.uploadBudgetFile(
+      accessToken,
+      exportBufferResponse.data,
+      fileName,
+      perfs,
+    );
 
     return {
       data: 'success',
