@@ -54,6 +54,7 @@ function reconcileFiles(
         reconciled.add(googleDriveFile.fileId);
         return {
           ...localFile,
+          id: googleDriveFile.fileId,
           cloudFileId: googleDriveFile.googleDriveFileId,
           groupId,
           name: googleDriveFile.name,
@@ -61,6 +62,8 @@ function reconcileFiles(
           encryptKeyId: googleDriveFile.encryptKeyId,
           hasKey: googleDriveFile.hasKey,
           state: 'google-drive-sync',
+          lastSyncTimestamp: googleDriveFile.lastSyncTimestamp,
+          needSync: googleDriveFile.needSync,
         };
       }
     }
@@ -130,6 +133,7 @@ function reconcileFiles(
           .filter(gdf => !reconciled.has(gdf.fileId))
           .map(gdf => {
             return {
+              id: gdf.fileId,
               cloudFileId: gdf.fileId,
               groupId: gdf.groupId,
               name: gdf.name,
@@ -137,6 +141,8 @@ function reconcileFiles(
               encryptKeyId: gdf.encryptKeyId,
               hasKey: gdf.hasKey,
               state: 'google-drive',
+              lastSyncTimestamp: gdf.lastSyncTimestamp,
+              needSync: gdf.needSync,
             };
           }),
       )

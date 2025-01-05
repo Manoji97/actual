@@ -206,6 +206,15 @@ function FileItem({
 }) {
   const { t } = useTranslation();
 
+  const needGoogleDriveSync = () => {
+    if (file.state === 'google-drive' || file.state === 'google-drive-sync') {
+      return file.needSync;
+    }
+    return false;
+  };
+
+  const needSync = needGoogleDriveSync();
+
   const selecting = useRef(false);
 
   async function _onSelect(file: File) {
@@ -254,6 +263,16 @@ function FileItem({
             alignItems: 'center',
           }}
         >
+          {needSync && (
+            <SvgCloudDownload
+              style={{
+                width: 15,
+                height: 15,
+                marginRight: 8,
+                color: theme.formLabelText,
+              }}
+            />
+          )}
           {file.encryptKeyId && (
             <SvgKey
               style={{
@@ -425,6 +444,9 @@ export function BudgetList({ showHeader = true, quickSwitchMode = false }) {
   const dispatch = useDispatch();
   const allFiles = useSelector(state => state.budgets.allFiles || []);
   const [id] = useMetadataPref('id');
+  const [_, setGoogleDriveFileId] = useMetadataPref('googleDriveFileId');
+  const [googleDriveLastSyncedTimeStamp, setGoogleDriveLastSyncedTimestamp] =
+    useMetadataPref('googleDriveLastSyncedTimestamp');
 
   // Remote files do not have the 'id' field
   function isNonRemoteFile(
@@ -466,8 +488,11 @@ export function BudgetList({ showHeader = true, quickSwitchMode = false }) {
     const isRemoteFile = file.state === 'remote';
 
     if (!id) {
-      if (isGoogleDriveFile) {
+      if (isGoogleDriveFile && file.needSync) {
+        // if no need sync we no need to update any thing
         await dispatch(downloadGoogleDriveBudget(file.cloudFileId));
+        setGoogleDriveFileId(file.cloudFileId);
+        setGoogleDriveLastSyncedTimestamp(file.lastSyncTimestamp);
       } else if (isRemoteFile) {
         await dispatch(downloadBudget(file.cloudFileId));
       } else {

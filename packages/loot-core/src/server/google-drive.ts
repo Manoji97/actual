@@ -44,7 +44,10 @@ async function listFiles(accessToken: string, parentFolderId?: string) {
     'https://www.googleapis.com/drive/v3/files?pageSize=10&fields=files(id,name,appProperties)';
 
   if (parentFolderId) {
-    url += `&q=‘${parentFolderId}’+in+parents`;
+    const parentFolderQuery = encodeURIComponent(
+      `q=‘${parentFolderId}’+in+parents`,
+    );
+    url = `https://www.googleapis.com/drive/v3/files?${parentFolderQuery}&pageSize=10&fields=files(id,name,appProperties)`;
   }
 
   const response = await fetch(url, {
@@ -66,24 +69,33 @@ async function uploadFile(
   metadata: { name: string; mimeType: string },
   customProperties: { [key: string]: string | boolean },
   buffer: Buffer,
+  googleDriveFileId?: string,
   parentFolderId?: string,
 ) {
-  const sessionResponse = await fetch(
-    'https://www.googleapis.com/upload/drive/v3/files?uploadType=resumable',
-    {
-      method: 'POST',
-      headers: {
-        Authorization: `Bearer ${accessToken}`,
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        name: metadata.name,
-        mimeType: metadata.mimeType,
-        parents: parentFolderId ? [parentFolderId] : [],
-        appProperties: customProperties,
-      }),
+  let url = `https://www.googleapis.com/upload/drive/v3/files?uploadType=resumable`;
+
+  const body = {
+    name: metadata.name,
+    mimeType: metadata.mimeType,
+    appProperties: customProperties,
+    parents: parentFolderId ? [parentFolderId] : [],
+  };
+
+  if (googleDriveFileId) {
+    url = `https://www.googleapis.com/upload/drive/v3/files/${googleDriveFileId}?uploadType=resumable`;
+    body['parents'] = undefined;
+  }
+
+  console.log('url', url);
+  console.log('body', body);
+  const sessionResponse = await fetch(url, {
+    method: googleDriveFileId ? 'PATCH' : 'POST',
+    headers: {
+      Authorization: `Bearer ${accessToken}`,
+      'Content-Type': 'application/json',
     },
-  );
+    body: JSON.stringify(body),
+  });
 
   console.log('sessionResponse', sessionResponse);
 
@@ -137,37 +149,16 @@ async function downloadFile(
   return Buffer.from(arrayBuffer);
 }
 
-// export function listGoogleDriveFilesTest(): Promise<GoogleDriveFile[]> {
-//   return new Promise(resolve => {
-//     resolve([
-//       {
-//         deleted: false,
-//         fileId: 'dummy-file-id-1',
-//         groupId: 'dummy-group-id-1',
-//         name: 'dummy-file-1',
-//         encryptKeyId: null,
-//         hasKey: false,
-//       },
-//       {
-//         deleted: false,
-//         fileId: 'dummy-file-id-2',
-//         groupId: 'dummy-group-id-2',
-//         name: 'dummy-file-2',
-//         encryptKeyId: null,
-//         hasKey: false,
-//       },
-//     ]);
-//   });
-// }
-
 export interface GoogleDriveFile {
   deleted: boolean;
   fileId: string;
   googleDriveFileId: string;
+  lastSyncTimestamp?: string;
   groupId?: string;
   name: string;
   encryptKeyId?: string;
   hasKey: boolean;
+  needSync: boolean;
 }
 
 export const initializeGoogleDrive = async (
@@ -199,24 +190,17 @@ export const getBudgetsList = async (
     file => file.appProperties?.isBudgetFile === 'true',
   );
   console.log('budgetFiles', budgetFiles);
+
   return budgetFiles.map(file => ({
     deleted: false,
     googleDriveFileId: file.id,
+    lastSyncTimestamp: file.appProperties?.lastUpdated,
     fileId: file.appProperties?.id,
     name: file.appProperties?.budgetName,
     encryptKeyId: null,
     hasKey: false,
+    needSync: true,
   }));
-  // return [
-  //   {
-  //     deleted: false,
-  //     fileId: 'dummy-file-id-1',
-  //     groupId: 'dummy-group-id-1',
-  //     name: 'dummy-file-1',
-  //     encryptKeyId: null,
-  //     hasKey: false,
-  //   },
-  // ];
 };
 
 export const uploadBudgetFile = async (
@@ -224,6 +208,7 @@ export const uploadBudgetFile = async (
   file: Buffer,
   fileName: string,
   properties: { [key: string]: string | boolean },
+  googleDriveFileId?: string,
 ) => {
   if (!ACTUAL_INFO.ACTUAL_FOLDER_ID) {
     throw new Error('Actual budget folder not found');
@@ -245,10 +230,24 @@ export const uploadBudgetFile = async (
     metadata,
     customProperties,
     file,
+    googleDriveFileId,
     ACTUAL_INFO.ACTUAL_FOLDER_ID,
   );
 
   return response;
+};
+
+export const checkIfBudgetFileExists = async (
+  accessToken: string,
+  fileId: string,
+) => {
+  console.log('ACTUAL_INFO.ACTUAL_FOLDER_ID', ACTUAL_INFO.ACTUAL_FOLDER_ID);
+  const files = await listFiles(accessToken, ACTUAL_INFO.ACTUAL_FOLDER_ID);
+  const budgetFiles = files.filter(
+    file => file.appProperties?.isBudgetFile === 'true',
+  );
+  const budgetFile = budgetFiles.find(file => file.id === fileId);
+  return !!budgetFile;
 };
 
 export const downloadBudgetFile = async (

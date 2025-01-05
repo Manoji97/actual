@@ -331,8 +331,8 @@ export interface ServerHandlers {
 
   'download-google-drive-budget': (arg: {
     accessToken: string;
-    googleDriveFileId;
-  }) => Promise<{ error?; id }>;
+    googleDriveFileId: string;
+  }) => Promise<{ error?; id? }>;
 
   'sync-budget': () => Promise<{
     error?: { message: string; reason: string; meta: unknown };

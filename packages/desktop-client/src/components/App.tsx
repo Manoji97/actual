@@ -46,7 +46,7 @@ function AppInner() {
   const { t } = useTranslation();
   const { showBoundary: showErrorBoundary } = useErrorBoundary();
   const dispatch = useDispatch();
-  const google = useSelector(state => state.googleAuth);
+  const google = useSelector(state => state.google);
   console.log('google', google);
 
   const { gapiLoaded, signIn, signOut } = useGoogleApi();
@@ -124,7 +124,7 @@ function AppInner() {
     global.Actual.updateAppMenu(budgetId);
   }, [budgetId]);
 
-  if (!(gapiLoaded && google.loggedIn)) {
+  if (!(gapiLoaded && google.auth.loggedIn)) {
     return (
       <div>
         <button onClick={signIn}>Sign In with Google</button>
@@ -132,7 +132,7 @@ function AppInner() {
       </div>
     );
   }
-  dispatch(initializeGoogle(google.accessToken));
+  dispatch(initializeGoogle(google.auth.accessToken));
   return budgetId ? <FinancesApp /> : <ManagementApp />;
 }
 

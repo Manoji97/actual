@@ -1759,8 +1759,25 @@ handlers['initialize-goole-drive'] = async function ({ accessToken }) {
 };
 
 handlers['get-google-drive-files'] = async function ({ accessToken }) {
-  return googleDriveApi.getBudgetsList(accessToken);
-  // return googleDriveApi.listGoogleDriveFilesTest();
+  const budgetList = await googleDriveApi.getBudgetsList(accessToken);
+  const updatedBudgets = await Promise.all(
+    budgetList.map(async budget => {
+      const pref = await prefs.getPref(budget.fileId);
+      if (pref.googleDriveLastSyncedTimestamp) {
+        if (
+          new Date(pref.googleDriveLastSyncedTimestamp) <
+          new Date(budget.lastSyncTimestamp)
+        ) {
+          budget.needSync = true;
+        } else {
+          budget.needSync = false;
+        }
+      }
+      return budget;
+    }),
+  );
+  console.log('get-google-drive-files: budgetList: ', updatedBudgets);
+  return updatedBudgets;
 };
 
 handlers['reset-budget-cache'] = mutator(async function () {
@@ -1832,29 +1849,28 @@ handlers['download-google-drive-budget'] = async function ({
   accessToken,
   googleDriveFileId,
 }) {
-  if (!accessToken) {
-    return { error: { reason: 'unauthorized' }, id: null };
+  try {
+    if (!accessToken) {
+      return { error: { reason: 'unauthorized' }, id: null };
+    }
+
+    const fileBuffer = await googleDriveApi.downloadBudgetFile(
+      accessToken,
+      googleDriveFileId,
+    );
+
+    console.log('download-google-drive-budget: Download successful');
+
+    const results = await handleBudgetImport('actual', '', fileBuffer);
+    console.log('download-google-drive-budget: handleBudgetImport: ', results);
+
+    return results || {};
+  } catch (err) {
+    console.error('download-google-drive-budget: err: ', err);
+    err.message = 'Error importing budget: ' + err.message;
+    captureException(err);
+    return { error: 'internal-error' };
   }
-
-  const fileBuffer = await googleDriveApi.downloadBudgetFile(
-    accessToken,
-    googleDriveFileId,
-  );
-
-  console.log('Downloaded Google Drive budget', fileBuffer);
-
-  // if (fileBuffer) {
-  //   const id = await idFromBudgetName('Google Drive Budget');
-  //   const budgetDir = fs.getBudgetDir(id);
-  //   await fs.mkdir(budgetDir);
-
-  //   await fs.writeFile(fs.join(budgetDir, 'db.sqlite'), fileBuffer);
-
-  //   await prefs.loadPrefs(id);
-  //   return
-
-  console.log('Downloading Google Drive budget');
-  return { id: 'null' };
 };
 
 // open and sync, but don’t close
@@ -2123,22 +2139,41 @@ handlers['google-drive-export-budget'] = async function ({ accessToken }) {
 
     const exportBufferResponse = await handlers['export-budget']();
     if ('error' in exportBufferResponse) {
-      console.log('Export error code:', exportBufferResponse.error);
+      console.log(
+        'google-drive-export-budget: export error:',
+        exportBufferResponse.error,
+      );
       return { error: exportBufferResponse.error };
     }
 
+    const fileExists = await googleDriveApi.checkIfBudgetFileExists(
+      accessToken,
+      perfs.googleDriveFileId,
+    );
+
+    if (!fileExists) {
+      prefs.savePrefs({ googleDriveFileId: null });
+      console.log('google-drive-export-budget: file does not exist');
+    }
+
     const fileName = `${perfs.id}.zip`;
+    console.log('google-drive-export-budget: prefs: ', prefs);
+
     await googleDriveApi.uploadBudgetFile(
       accessToken,
       exportBufferResponse.data,
       fileName,
       perfs,
+      perfs.googleDriveFileId,
     );
+
+    console.log('google-drive-export-budget: upload successful');
 
     return {
       data: 'success',
     };
   } catch (err) {
+    console.log('google-drive-export-budget: error:', err);
     err.message = 'Error exporting budget: ' + err.message;
     captureException(err);
     return { error: 'internal-error' };

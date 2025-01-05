@@ -40,20 +40,26 @@ export type RemoteFile = {
 };
 
 export type GoogleDriveFile = {
+  id: string;
   cloudFileId: string;
   groupId: string;
   name: string;
   encryptKeyId?: string;
   hasKey: boolean;
+  lastSyncTimestamp?: string;
+  needSync: boolean;
   state: 'google-drive';
 };
 
 export type GoogleDriveSyncedFile = {
+  id: string;
   cloudFileId: string;
   groupId: string;
   name: string;
   encryptKeyId?: string;
   hasKey: boolean;
+  lastSyncTimestamp?: string;
+  needSync: boolean;
   state: 'google-drive-sync';
 };
 

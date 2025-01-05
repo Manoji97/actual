@@ -7,7 +7,9 @@ import type { Handlers } from '../../types/handlers';
 import * as constants from '../constants';
 
 import { setAppState } from './app';
+import { setGoogleDrive } from './google';
 import { closeModal, pushModal } from './modals';
+import { addNotification } from './notifications';
 import { loadPrefs, loadGlobalPrefs } from './prefs';
 import type { Dispatch, GetState } from './types';
 
@@ -35,7 +37,7 @@ export function loadRemoteFiles() {
 
 export function loadAllFiles() {
   return async (dispatch: Dispatch, getState: GetState) => {
-    const googleAccessToken = getState().googleAuth.accessToken;
+    const googleAccessToken = getState().google.auth.accessToken;
     const budgets = await send('get-budgets');
     const files = await send('get-remote-files');
     const googleDriveFiles = await send('get-google-drive-files', {
@@ -327,9 +329,9 @@ export function downloadGoogleDriveBudget(googleDriveFileId: string) {
       }),
     );
 
-    const googleAccessToken = getState().googleAuth.accessToken;
+    const googleAccessToken = getState().google.auth.accessToken;
 
-    const { id, error } = await send('download-google-drive-budget', {
+    const { error } = await send('download-google-drive-budget', {
       accessToken: googleAccessToken,
       googleDriveFileId,
     });
@@ -343,15 +345,54 @@ export function downloadGoogleDriveBudget(googleDriveFileId: string) {
     await Promise.all([
       dispatch(loadGlobalPrefs()),
       dispatch(loadAllFiles()),
-      dispatch(loadBudget(id)),
+      dispatch(loadPrefs()),
     ]);
     dispatch(setAppState({ loadingText: null }));
   };
 }
 
-export function closeAndDowloadGoogleDriveBudget(googleDriveFileId: string) {
-  return async (dispatch: Dispatch) => {
-    await dispatch(closeBudget());
-    dispatch(downloadGoogleDriveBudget(googleDriveFileId));
+export function uploadBudgetToGoogleDrive() {
+  return async (dispatch: Dispatch, getState: GetState) => {
+    console.log(`Uploading file to Google Drive`);
+
+    dispatch(
+      setGoogleDrive({
+        isUploading: true,
+      }),
+    );
+    dispatch(
+      addNotification({
+        type: 'message',
+        message: 'Google Drive export started',
+      }),
+    );
+
+    const googleAccessToken = getState().google.auth.accessToken;
+
+    const response = await send('google-drive-export-budget', {
+      accessToken: googleAccessToken,
+    });
+
+    if ('error' in response) {
+      console.log('Export error code:', response.error);
+      alert(response);
+      dispatch(
+        addNotification({
+          type: 'error',
+          message: 'Google Drive export Failed',
+        }),
+      );
+    }
+    dispatch(
+      setGoogleDrive({
+        isUploading: false,
+      }),
+    );
+    dispatch(
+      addNotification({
+        type: 'message',
+        message: 'Google Drive export Completed',
+      }),
+    );
   };
 }

@@ -32,3 +32,4 @@ export const ACCOUNT_SYNC_STATUS = 'ACCOUNT_SYNC_STATUS';
 export const SIGN_OUT = 'SIGN_OUT';
 
 export const SET_GOOGLE_AUTH = 'SET_GOOGLE_AUTH';
+export const SET_GOOGLE_DRIVE = 'SET_GOOGLE_DRIVE';

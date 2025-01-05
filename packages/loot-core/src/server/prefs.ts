@@ -88,3 +88,14 @@ export function getPrefs(): MetadataPrefs {
 export function getDefaultPrefs(id: string, budgetName: string) {
   return { id, budgetName };
 }
+
+export async function getPref(id: string): Promise<MetadataPrefs> {
+  const fullpath = fs.join(fs.getBudgetDir(id), 'metadata.json');
+
+  try {
+    return JSON.parse(await fs.readFile(fullpath));
+  } catch (e) {
+    console.error('getPref: google drive load list', e);
+    return { id, budgetName: id };
+  }
+}
