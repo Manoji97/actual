@@ -48,14 +48,14 @@ function reconcileFiles(
   const files = localFiles.map((localFile): File & { deleted: boolean } => {
     const { cloudFileId, groupId, id } = localFile;
     if (id && googleDriveFiles !== null && googleDriveFiles.length > 0) {
-      const googleDriveFile = googleDriveFiles.find(gdf => gdf.fileId === id);
+      const googleDriveFile = googleDriveFiles.find(gdf => gdf.budgetId === id);
 
       if (googleDriveFile) {
-        reconciled.add(googleDriveFile.fileId);
+        reconciled.add(googleDriveFile.budgetId);
         return {
           ...localFile,
-          id: googleDriveFile.fileId,
-          cloudFileId: googleDriveFile.googleDriveFileId,
+          id: googleDriveFile.googleDriveFileId,
+          cloudFileId: googleDriveFile.budgetId,
           groupId,
           name: googleDriveFile.name,
           deleted: googleDriveFile.deleted,
@@ -130,11 +130,11 @@ function reconcileFiles(
     files
       .concat(
         (googleDriveFiles || [])
-          .filter(gdf => !reconciled.has(gdf.fileId))
+          .filter(gdf => !reconciled.has(gdf.budgetId))
           .map(gdf => {
             return {
-              id: gdf.fileId,
-              cloudFileId: gdf.fileId,
+              id: gdf.googleDriveFileId,
+              cloudFileId: gdf.budgetId,
               groupId: gdf.groupId,
               name: gdf.name,
               deleted: gdf.deleted,

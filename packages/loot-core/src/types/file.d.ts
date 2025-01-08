@@ -40,7 +40,7 @@ export type RemoteFile = {
 };
 
 export type GoogleDriveFile = {
-  id: string;
+  id: string; // google drive file id
   cloudFileId: string;
   groupId: string;
   name: string;
@@ -52,7 +52,7 @@ export type GoogleDriveFile = {
 };
 
 export type GoogleDriveSyncedFile = {
-  id: string;
+  id: string; // google drive file id
   cloudFileId: string;
   groupId: string;
   name: string;

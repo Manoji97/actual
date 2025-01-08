@@ -22,6 +22,8 @@ export function DeleteFileModal({ file }: DeleteFileProps) {
   // user. The current user should be able to delete the local file,
   // but not the remote one
   const isCloudFile = 'cloudFileId' in file && file.state !== 'broken';
+  const isGoogleDriveFile =
+    file.state === 'google-drive' || file.state === 'google-drive-sync';
   const dispatch = useDispatch();
 
   const [loadingState, setLoadingState] = useState<'cloud' | 'local' | null>(
@@ -136,7 +138,8 @@ export function DeleteFileModal({ file }: DeleteFileProps) {
                   }}
                   onPress={async () => {
                     setLoadingState('local');
-                    await dispatch(deleteBudget(file.id));
+                    const id = isGoogleDriveFile ? file.cloudFileId : file.id;
+                    await dispatch(deleteBudget(id));
                     setLoadingState(null);
 
                     close();

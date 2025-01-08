@@ -351,6 +351,13 @@ export function downloadGoogleDriveBudget(googleDriveFileId: string) {
   };
 }
 
+export function closeAndDownloadGoogleDriveBudget(googleDriveFileId: string) {
+  return async (dispatch: Dispatch) => {
+    await dispatch(closeBudget());
+    dispatch(downloadGoogleDriveBudget(googleDriveFileId));
+  };
+}
+
 export function uploadBudgetToGoogleDrive() {
   return async (dispatch: Dispatch, getState: GetState) => {
     console.log(`Uploading file to Google Drive`);

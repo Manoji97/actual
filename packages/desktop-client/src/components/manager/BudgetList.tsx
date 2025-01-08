@@ -8,6 +8,7 @@ import {
   createBudget,
   downloadBudget,
   downloadGoogleDriveBudget,
+  closeAndDownloadGoogleDriveBudget,
   getUserData,
   loadAllFiles,
   loadBudget,
@@ -488,11 +489,15 @@ export function BudgetList({ showHeader = true, quickSwitchMode = false }) {
     const isRemoteFile = file.state === 'remote';
 
     if (!id) {
-      if (isGoogleDriveFile && file.needSync) {
-        // if no need sync we no need to update any thing
-        await dispatch(downloadGoogleDriveBudget(file.cloudFileId));
-        setGoogleDriveFileId(file.cloudFileId);
-        setGoogleDriveLastSyncedTimestamp(file.lastSyncTimestamp);
+      if (isGoogleDriveFile) {
+        if (file.needSync) {
+          // if need sync we need to update the file
+          await dispatch(downloadGoogleDriveBudget(file.id));
+          setGoogleDriveFileId(file.id);
+          setGoogleDriveLastSyncedTimestamp(file.lastSyncTimestamp);
+        } else {
+          dispatch(loadBudget(file.cloudFileId));
+        }
       } else if (isRemoteFile) {
         await dispatch(downloadBudget(file.cloudFileId));
       } else {
@@ -501,7 +506,7 @@ export function BudgetList({ showHeader = true, quickSwitchMode = false }) {
     } else if (!isGoogleDriveFile && !isRemoteFile && file.id !== id) {
       await dispatch(closeAndLoadBudget(file.id));
     } else if (isGoogleDriveFile) {
-      await dispatch(closeAndDownloadBudget(file.cloudFileId));
+      await dispatch(closeAndDownloadGoogleDriveBudget(file.id));
     } else if (isRemoteFile) {
       await dispatch(closeAndDownloadBudget(file.cloudFileId));
     }

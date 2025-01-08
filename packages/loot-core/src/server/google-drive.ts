@@ -151,7 +151,7 @@ async function downloadFile(
 
 export interface GoogleDriveFile {
   deleted: boolean;
-  fileId: string;
+  budgetId: string;
   googleDriveFileId: string;
   lastSyncTimestamp?: string;
   groupId?: string;
@@ -193,6 +193,7 @@ export const getBudgetsList = async (
 
   return budgetFiles.map(file => ({
     deleted: false,
+    budgetId: file.appProperties?.id,
     googleDriveFileId: file.id,
     lastSyncTimestamp: file.appProperties?.lastUpdated,
     fileId: file.appProperties?.id,

@@ -1762,7 +1762,7 @@ handlers['get-google-drive-files'] = async function ({ accessToken }) {
   const budgetList = await googleDriveApi.getBudgetsList(accessToken);
   const updatedBudgets = await Promise.all(
     budgetList.map(async budget => {
-      const pref = await prefs.getPref(budget.fileId);
+      const pref = await prefs.getPref(budget.budgetId);
       if (pref.googleDriveLastSyncedTimestamp) {
         if (
           new Date(pref.googleDriveLastSyncedTimestamp) <
