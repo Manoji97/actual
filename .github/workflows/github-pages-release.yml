@@ -1,0 +1,33 @@
+name: GitHub Pages Release
+
+defaults:
+  run:
+    shell: bash
+
+env:
+  CI: true
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+      
+      - name: Set up environment
+        uses: ./.github/actions/setup
+          
+      - name: Build Actual
+        run: ./bin/package-browser
+      
+      - name: Deploy to GitHub Pages
+        uses: peaceiris/actions-gh-pages@v3
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_dir: ./packages/desktop-client/build
