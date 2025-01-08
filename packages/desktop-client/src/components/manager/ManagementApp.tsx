@@ -2,8 +2,13 @@ import React, { useEffect } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { Navigate, Route, Routes } from 'react-router-dom';
 
-import { loggedIn, setAppState } from 'loot-core/client/actions';
+import {
+  loggedIn,
+  setAppState,
+  initializeGoogle,
+} from 'loot-core/client/actions';
 
+import { useGoogleApi } from '../../hooks/useGoogleApi';
 import { useMetaThemeColor } from '../../hooks/useMetaThemeColor';
 import { theme } from '../../style';
 import { tokens } from '../../tokens';
@@ -21,8 +26,9 @@ import { ServerURL } from './ServerURL';
 import { Bootstrap } from './subscribe/Bootstrap';
 import { ChangePassword } from './subscribe/ChangePassword';
 import { Error } from './subscribe/Error';
+import { GoogleLogin } from './subscribe/GoogleLogin';
 import { Login } from './subscribe/Login';
-import { WelcomeScreen } from './WelcomeScreen';
+// import { WelcomeScreen } from './WelcomeScreen';
 
 function Version() {
   const version = useServerVersion();
@@ -55,24 +61,30 @@ export function ManagementApp() {
     isNarrowWidth ? theme.mobileConfigServerViewTheme : undefined,
   );
 
-  const files = useSelector(state => state.budgets.allFiles);
   const isLoading = useSelector(state => state.app.loadingText !== null);
   const userData = useSelector(state => state.user.data);
   const managerHasInitialized = useSelector(
     state => state.app.managerHasInitialized,
   );
 
+  const { gapiLoaded } = useGoogleApi();
+
+  const google = useSelector(state => state.google);
+
   const dispatch = useDispatch();
 
   // runs on mount only
   useEffect(() => {
-    async function fetchData() {
-      await dispatch(loggedIn());
-      dispatch(setAppState({ managerHasInitialized: true }));
-    }
+    if (google.auth.loggedIn) {
+      async function fetchData() {
+        await dispatch(loggedIn());
+        dispatch(setAppState({ managerHasInitialized: true }));
+      }
 
-    fetchData();
-  }, [dispatch]);
+      dispatch(initializeGoogle(google.auth.accessToken));
+      fetchData();
+    }
+  }, [dispatch, google.auth]);
 
   return (
     <View style={{ height: '100%', color: theme.pageText }}>
@@ -103,7 +115,13 @@ export function ManagementApp() {
         />
       </View>
 
-      {managerHasInitialized && !isLoading && (
+      {gapiLoaded && !google.auth.loggedIn && (
+        <Routes>
+          <Route path="/*" element={<Navigate to="/google-login" />} />
+        </Routes>
+      )}
+
+      {managerHasInitialized && !isLoading && google.auth.loggedIn && (
         <View
           style={{
             alignItems: 'center',
@@ -116,17 +134,20 @@ export function ManagementApp() {
             top: 0,
           }}
         >
-          {userData && files ? (
+          {userData ? (
             <>
               <Routes>
                 <Route path="/config-server" element={<ConfigServer />} />
 
                 <Route path="/change-password" element={<ChangePassword />} />
-                {files && files.length > 0 ? (
+                <Route path="/google-login" element={<GoogleLogin />} />
+
+                <Route path="/" element={<BudgetList />} />
+                {/* {files && files.length > 0 ? (
                   <Route path="/" element={<BudgetList />} />
                 ) : (
                   <Route path="/" element={<WelcomeScreen />} />
-                )}
+                )} */}
                 {/* Redirect all other pages to this route */}
                 <Route path="/*" element={<Navigate to="/" />} />
               </Routes>
@@ -168,6 +189,7 @@ export function ManagementApp() {
       )}
 
       <Routes>
+        <Route path="/google-login" element={<GoogleLogin />} />
         <Route path="/config-server" element={null} />
         <Route path="/*" element={<ServerURL />} />
       </Routes>

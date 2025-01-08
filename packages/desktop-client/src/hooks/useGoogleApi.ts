@@ -21,6 +21,7 @@ export const useGoogleApi = () => {
         .init({
           apiKey: API_KEY,
           clientId: CLIENT_ID,
+          plugin_name: 'personal-budget',
           discoveryDocs: [
             'https://www.googleapis.com/discovery/v1/apis/drive/v3/rest',
           ],
@@ -58,27 +59,5 @@ export const useGoogleApi = () => {
     gapi.load('client:auth2', start);
   }, [dispatch]);
 
-  const signIn = async () => {
-    const user = await gapi.auth2.getAuthInstance().signIn();
-    const token = user.getAuthResponse().access_token;
-    dispatch(setGoogleAuth({ accessToken: token, loggedIn: true }));
-
-    // Set up token refresh
-    const refreshToken = () => {
-      user.reloadAuthResponse().then(authResponse => {
-        const newToken = authResponse.access_token;
-        dispatch(setGoogleAuth({ accessToken: newToken, loggedIn: true }));
-      });
-    };
-
-    // Refresh the token before it expires
-    setInterval(refreshToken, 3500 * 1000); // Refresh 100 seconds before expiration
-  };
-
-  const signOut = async () => {
-    await gapi.auth2.getAuthInstance().signOut();
-    dispatch(setGoogleAuth({ accessToken: null, loggedIn: false }));
-  };
-
-  return { gapiLoaded, signIn, signOut };
+  return { gapiLoaded };
 };
